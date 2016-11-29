@@ -12,7 +12,7 @@ import org.nd4j.linalg.dataset.SplitTestAndTrain
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
-import org.nd4j.linalg.lossfunctions.LossFunctions
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import scopt.OptionParser
@@ -55,6 +55,8 @@ object Train {
   private val log = LoggerFactory.getLogger(getClass)
 
   private def net(nIn: Int, nOut: Int) = {
+    val learningRate = 0.01
+
     val model = new NeuralNet
     model.add(new Dense(128, nIn = nIn, activation = "relu", regularizer = L2(learningRate * 0.005)))
     model.add(new Dense(128, activation = "relu", regularizer = L2(learningRate * 0.005)))
