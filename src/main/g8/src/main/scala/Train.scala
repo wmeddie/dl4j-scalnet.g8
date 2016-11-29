@@ -64,6 +64,7 @@ object Train {
     model.add(new DenseOutput(nOut, activation = "softmax", lossFunction = LossFunction.MCXENT,
       regularizer = L2(learningRate * 0.005)))
     model.compile(optimizer = SGD(learningRate))
+    model
   }
     
   def main(args: Array[String]): Unit = {
@@ -86,18 +87,7 @@ object Train {
 
     val model = net(4, 3)
 
-    model.setListeners(new ScoreIterationListener(1))
-
-    for (i <- 0 until c.nEpochs) {
-      log.info(s"Starting epoch $"$"$i of $"$"${c.nEpochs}")
-
-      while (trainData.hasNext) {
-        model.fit(trainData.next())
-      }
-      
-      log.info(s"Finished epoch $"$"$i")
-      trainData.reset()
-    }
+    model.fit(iter = trainData, nbEpoch = c.nEpochs, listeners = List(new ScoreIterationListener(5)))
 
     ModelSerializer.writeModel(model, c.modelName, true)
     normalizer.save((1 to 4).map(j => new File(c.modelName + s".norm$"$"$j")):_*)
