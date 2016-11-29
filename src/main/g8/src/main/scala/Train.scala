@@ -1,11 +1,9 @@
 package $organization$.$name;format="lower,word"$
 
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration
-import org.deeplearning4j.nn.conf.layers.DenseLayer
-import org.deeplearning4j.nn.conf.layers.OutputLayer
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
-import org.deeplearning4j.nn.weights.WeightInit
+import org.deeplearning4j.scalnet.layers.{Dense, DenseOutput}
+import org.deeplearning4j.scalnet.regularizers.L2
+import org.deeplearning4j.scalnet.models.NeuralNet
+import org.deeplearning4j.scalnet.optimizers.SGD
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -56,23 +54,15 @@ object TrainConfig {
 object Train {
   private val log = LoggerFactory.getLogger(getClass)
 
-  private def net(nIn: Int, nOut: Int) = new NeuralNetConfiguration.Builder()
-    .seed(42)
-    .iterations(1)
-    .activation("relu")
-    .weightInit(WeightInit.XAVIER)
-    .learningRate(0.1)
-    .regularization(true).l2(1e-4)
-    .list(
-      new DenseLayer.Builder().nIn(nIn).nOut(3).build(),
-      new DenseLayer.Builder().nIn(3).nOut(3).build(),
-      new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-        .activation("softmax")
-        .nIn(3)
-        .nOut(nOut)
-        .build()
-    )
-    .build()
+  private def net(nIn: Int, nOut: Int) = {
+    val model = new NeuralNet
+    model.add(new Dense(128, nIn = nIn, activation = "relu", regularizer = L2(learningRate * 0.005)))
+    model.add(new Dense(128, activation = "relu", regularizer = L2(learningRate * 0.005)))
+    model.add(new Dense(128, activation = "relu", regularizer = L2(learningRate * 0.005)))
+    model.add(new DenseOutput(nOut, activation = "softmax", lossFunction = LossFunction.MCXENT,
+      regularizer = L2(learningRate * 0.005)))
+    model.compile(optimizer = SGD(learningRate))
+  }
     
   def main(args: Array[String]): Unit = {
     TrainConfig.parse(args) match {
@@ -92,9 +82,7 @@ object Train {
 
     log.info("Data Loaded")
 
-    val conf = net(4, 3)
-    val model = new MultiLayerNetwork(conf)
-    model.init()
+    val model = net(4, 3)
 
     model.setListeners(new ScoreIterationListener(1))
 
